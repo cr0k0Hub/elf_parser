@@ -66,6 +66,52 @@ typedef struct __attribute__((packed)) ELF_64_HEADER {
     uint16_t shstrndx;
 } ELF_64_HEADER;
 
+ELF_32_HEADER elf_32_init(FILE *file_ptr) {
+    ELF_32_HEADER elf = { 0 };
+
+    fseek(file_ptr, ELF_TYPE_SHIFT_32, SEEK_SET);
+    fread(&elf.type, 1, sizeof(elf.type), file_ptr);
+
+    fseek(file_ptr, ELF_MACHINE_SHIFT_32, SEEK_SET);
+    fread(&elf.machine, 1, sizeof(elf.machine), file_ptr);
+
+    fseek(file_ptr, ELF_VERSION_SHIFT_32, SEEK_SET);
+    fread(&elf.version, 1, sizeof(elf.version), file_ptr);
+
+    fseek(file_ptr, ELF_ENTRY_SHIFT_32, SEEK_SET);
+    fread(&elf.entry, 1, sizeof(elf.entry), file_ptr);
+
+    fseek(file_ptr, ELF_PHOFF_SHIFT_32, SEEK_SET);
+    fread(&elf.phoff, 1, sizeof(elf.phoff), file_ptr);
+
+    fseek(file_ptr, ELF_SHOFF_SHIFT_32, SEEK_SET);
+    fread(&elf.shoff, 1, sizeof(elf.shoff), file_ptr);
+
+    fseek(file_ptr, ELF_FLAGS_SHIFT_32, SEEK_SET);
+    fread(&elf.flags, 1, sizeof(elf.flags), file_ptr);
+
+    fseek(file_ptr, ELF_EHSIZE_SHIFT_32, SEEK_SET);
+    fread(&elf.ehsize, 1, sizeof(elf.ehsize), file_ptr);
+
+    fseek(file_ptr, ELF_PHENTSIZE_SHIFT_32, SEEK_SET);
+    fread(&elf.phentsize, 1, sizeof(elf.phentsize), file_ptr);
+
+    fseek(file_ptr, ELF_PHNUM_SHIFT_32, SEEK_SET);
+    fread(&elf.phnum, 1, sizeof(elf.phnum), file_ptr);
+
+    fseek(file_ptr, ELF_SHENTSIZE_SHIFT_32, SEEK_SET);
+    fread(&elf.shentsize, 1, sizeof(elf.shentsize), file_ptr);
+
+    fseek(file_ptr, ELF_SHNUM_SHIFT_32, SEEK_SET);
+    fread(&elf.shnum, 1, sizeof(elf.shnum), file_ptr);
+
+    fseek(file_ptr, ELF_SHSTRNDX_SHIFT_32, SEEK_SET);
+    fread(&elf.shstrndx, 1, sizeof(elf.shstrndx), file_ptr);
+
+    return elf;
+}
+
+
 ELF_64_HEADER elf_64_init(FILE *file_ptr) {
     ELF_64_HEADER elf = { 0 };
 
@@ -166,16 +212,28 @@ int main(int argc, char *argv[]) {
         goto CLEANUP;
     }
 
-    // fseek(f, 0, SEEK_SET);
-    // print_bytes(f, 32);
-    // fseek(f, 0, SEEK_SET);
-    ELF_64_HEADER elf = elf_64_init(f);
+    fseek(f, 4, SEEK_SET);
+    if (fgetc(f) == ELF_CLASS_32) {
+        ELF_32_HEADER elf = elf_32_init(f);
+        
+        printf("==========[ INFO ]==========\n");
+        printf("TYPE:    0x%x\n", elf.type);
+        printf("MACHINE: 0x%x\n", elf.machine);
+        printf("VERSION: 0x%x\n", elf.version);
+        printf("ENTRY:   0x%x\n", elf.entry);
+        printf("SHNUM:   0x%x\n", elf.shnum);
+    } else {
+        ELF_64_HEADER elf = elf_64_init(f);
 
-    printf("TYPE:    0x%x\n", elf.type);
-    printf("MACHINE: 0x%x\n", elf.machine);
-    printf("VERSION: 0x%x\n", elf.version);
-    printf("ENTRY:   0x%x\n", elf.entry);
-    printf("SHNUM:   0x%x\n", elf.shnum);
+        printf("==========[ INFO ]==========\n");
+        printf("TYPE:    0x%x\n", elf.type);
+        printf("MACHINE: 0x%x\n", elf.machine);
+        printf("VERSION: 0x%x\n", elf.version);
+        printf("ENTRY:   0x%x\n", elf.entry);
+        printf("SHNUM:   0x%x\n", elf.shnum);
+    }
+
+    
 
     printf("\n");
 
