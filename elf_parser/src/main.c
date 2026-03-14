@@ -1,7 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
 #include "utils.h"
+#include <string.h>
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -58,7 +56,7 @@ int main(int argc, char *argv[]) {
 
         if (elf.phnum > 0) {
             fseek(f, elf.phoff, SEEK_SET);
-            for (size_t i = 0; i < elf.phnum-1; i++) {
+            for (size_t i = 0; i < elf.phnum; i++) {
                 ELF_64_PHDR phdr = get_64_prog_header(f);
                 printf("  SEGMENT: %ld\n", i);
                 printf("  TYPE:    0x%x\n", phdr.p_type);
@@ -67,7 +65,38 @@ int main(int argc, char *argv[]) {
                 printf("============================\n");
             }
 
-        }        
+        }   
+
+        if (elf.shnum > 0) {
+            ELF_64_SHDR *shdrs = malloc(elf.shnum * sizeof(ELF_64_SHDR));
+            if (!shdrs) {
+                perror("[-] (main) failed to allocate memory");
+                goto CLEANUP;
+            }
+            
+            fseek(f, elf.shoff, SEEK_SET);
+            printf("========[ SECTIONS ]========\n");
+            for (size_t i = 0; i < elf.shnum; i++) {
+                ELF_64_SHDR sh = get_64_sec_header(f);
+                shdrs[i] = sh;
+            }
+
+            ELF_64_SHDR *strtab_hdr = &shdrs[elf.shstrndx];
+            fseek(f, strtab_hdr->sh_offset, SEEK_SET);
+
+            char *shstrtab = malloc(strtab_hdr->sh_size);
+            fread(shstrtab, 1, strtab_hdr->sh_size, f);
+            for (size_t i = 0; i < elf.shnum; i++) {
+                const char *name = (i == elf.shstrndx) ? ".shstrtab" : shstrtab + shdrs[i].sh_name;
+                printf("  INDEX: %d\n", i);
+                printf("  NAME:  %s\n", name);
+                printf("  TYPE:  0x%x\n", shdrs[i].sh_type);
+                printf("============================\n");
+            }
+
+            free(shstrtab);
+            free(shdrs);
+        }
     }
 
     printf("\n");
