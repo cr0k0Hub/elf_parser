@@ -1,4 +1,7 @@
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #define ELF_CLASS_32 1
 #define ELF_CLASS_64 2
@@ -85,6 +88,32 @@ typedef struct __attribute__((packed)) ELF_64_PHDR {
     uint64_t p_align;
 } ELF_64_PHDR;
 
+typedef struct __attribute__((packed)) ELF_32_SHDR {
+    uint32_t sh_name;
+    uint32_t sh_type;
+    uint32_t sh_flags;
+    uint32_t sh_addr;
+    uint32_t sh_offset;
+    uint32_t sh_size;
+    uint32_t sh_link;
+    uint32_t sh_info;
+    uint32_t sh_addralign;
+    uint32_t sh_entsize;
+} ELF_32_SHDR;
+
+typedef struct __attribute__((packed)) ELF_64_SHDR {
+    uint32_t sh_name;
+    uint32_t sh_type;
+    uint64_t sh_flags;
+    uint64_t sh_addr;
+    uint64_t sh_offset;
+    uint64_t sh_size;
+    uint32_t sh_link;
+    uint32_t sh_info;
+    uint64_t sh_addralign;
+    uint64_t sh_entsize;
+} ELF_64_SHDR;
+
 ELF_32_HEADER elf_32_init(FILE *file_ptr) {
     ELF_32_HEADER elf = { 0 };
 
@@ -129,6 +158,28 @@ ELF_64_PHDR get_64_prog_header(FILE *file_ptr) {
     }
 
     return phdr;
+}
+
+ELF_32_SHDR get_32_sec_header(FILE *file_ptr) {
+    ELF_32_SHDR shdr = { 0 };
+
+    size_t bytes_read = fread(&shdr, 1, sizeof(ELF_32_SHDR), file_ptr);
+    if (bytes_read != sizeof(ELF_32_SHDR)) {
+        perror("[-] (get_32_sec_header) failed to read bytes");
+    }
+
+    return shdr;
+}
+
+ELF_64_SHDR get_64_sec_header(FILE *file_ptr) {
+    ELF_64_SHDR shdr = { 0 };
+
+    size_t bytes_read = fread(&shdr, 1, sizeof(ELF_64_SHDR), file_ptr);
+    if (bytes_read != sizeof(ELF_64_SHDR)) {
+        perror("[-] (get_64_sec_header) failed to read bytes");
+    }
+
+    return shdr;
 }
 
 void print_bytes(FILE *file_ptr, size_t n) {
