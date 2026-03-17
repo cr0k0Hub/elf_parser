@@ -119,7 +119,7 @@ ELF_32_HEADER elf_32_init(FILE *file_ptr) {
 
     fseek(file_ptr, 16, SEEK_SET);
     size_t bytes_read = fread(&elf, 1, sizeof(ELF_32_HEADER), file_ptr);
-    if (bytes_read != 52) {
+    if (bytes_read != sizeof(ELF_32_HEADER)) {
         perror("[-] (elf_32_init) failed to read bytes");
     }
 

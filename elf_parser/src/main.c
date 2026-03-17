@@ -42,6 +42,56 @@ int main(int argc, char *argv[]) {
         printf("  ENTRY:   0x%x\n", elf.entry);
         printf("  SHNUM:   0x%x\n", elf.shnum);
         printf("============================\n");
+
+        if (elf.phnum > 0) {
+            fseek(f, elf.phoff, SEEK_SET);
+            for (size_t i = 0; i < elf.phnum; i++) {
+                ELF_32_PHDR phdr = get_32_prog_header(f);
+                printf("  SEGMENT: %ld\n", i);
+                printf("  TYPE:    0x%x\n", phdr.p_type);
+                printf("  VADDR:   0x%x\n", phdr.p_vaddr);
+                printf("============================\n");
+            }
+        }   
+
+        if (elf.shnum > 0) {
+            ELF_32_SHDR *shdrs = malloc(elf.shnum * sizeof(ELF_32_SHDR));
+            if (!shdrs) {
+                perror("[-] (main) failed to allocate memory");
+                goto CLEANUP;
+            }
+            
+            fseek(f, elf.shoff, SEEK_SET);
+            printf("========[ SECTIONS ]========\n");
+            for (size_t i = 0; i < elf.shnum; i++) {
+                ELF_32_SHDR sh = get_32_sec_header(f);
+                shdrs[i] = sh;
+            }
+
+            ELF_32_SHDR *strtab_hdr = &shdrs[elf.shstrndx];
+            fseek(f, strtab_hdr->sh_offset, SEEK_SET);
+
+            char *shstrtab = malloc(strtab_hdr->sh_size);
+            fread(shstrtab, 1, strtab_hdr->sh_size, f);
+            for (size_t i = 0; i < elf.shnum; i++) {
+                const char *name = (i == elf.shstrndx) ? ".shstrtab" : shstrtab + shdrs[i].sh_name;
+
+                if (strncmp(name, ".text", 5) == 0) {
+                    fseek(f, shdrs[i].sh_offset, SEEK_SET);
+                    printf("\t.text\n");
+                    print_bytes(f, shdrs[i].sh_size);
+                    printf("\t##########################\n");
+                    printf("\n");
+                }
+                printf("  INDEX: %ld\n", i);
+                printf("  NAME:  %s\n", name);
+                printf("  TYPE:  0x%x\n", shdrs[i].sh_type);
+                printf("============================\n");
+            }
+
+            free(shstrtab);
+            free(shdrs);
+        }
     } else {
         ELF_64_HEADER elf = elf_64_init(f);
 
@@ -49,7 +99,7 @@ int main(int argc, char *argv[]) {
         printf("  TYPE:    0x%x\n", elf.type);
         printf("  MACHINE: 0x%x\n", elf.machine);
         printf("  VERSION: 0x%x\n", elf.version);
-        printf("  ENTRY:   0x%x\n", elf.entry);
+        printf("  ENTRY:   0x%lx\n", elf.entry);
         printf("  SHNUM:   0x%x\n", elf.shnum);
         printf("  SHSTRND: 0x%x\n", elf.shstrndx);
         printf("============================\n");
@@ -88,7 +138,15 @@ int main(int argc, char *argv[]) {
             fread(shstrtab, 1, strtab_hdr->sh_size, f);
             for (size_t i = 0; i < elf.shnum; i++) {
                 const char *name = (i == elf.shstrndx) ? ".shstrtab" : shstrtab + shdrs[i].sh_name;
-                printf("  INDEX: %d\n", i);
+
+                if (strncmp(name, ".text", 5) == 0) {
+                    fseek(f, shdrs[i].sh_offset, SEEK_SET);
+                    printf("\t.text\n");
+                    print_bytes(f, shdrs[i].sh_size);
+                    printf("\t##########################\n");
+                    printf("\n");
+                }
+                printf("  INDEX: %ld\n", i);
                 printf("  NAME:  %s\n", name);
                 printf("  TYPE:  0x%x\n", shdrs[i].sh_type);
                 printf("============================\n");
