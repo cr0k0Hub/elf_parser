@@ -31,7 +31,7 @@ Make sure you have gcc and the standard C library installed.
 
 ```bash
 git clone https://github.com/cr0k0Hub/elf_parser.git
-cd elf-parser
+cd elf_parser
 cd src
 gcc  main.c -o elf_parser
 ```
@@ -39,13 +39,13 @@ gcc  main.c -o elf_parser
 ### Usage
 
 ```bash
-./elfparser <path-to-elf-file>
+./elf_parser <path-to-elf-file>
 ```
 ### Example
 
 Parsing a simple 64-bit executable:
 ```bash
-$ ./elfparser /bin/ls
+$ ./elf_parser /bin/ls
 [+] it's an elf!
 ==========[ INFO ]==========
   TYPE:    0x2
